@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type Note struct {
@@ -22,6 +23,24 @@ func main() {
 
 	router.GET("/notes", func(c *gin.Context) {
 		c.JSON(http.StatusOK, notes)
+	})
+
+	router.GET("/notes/:id", func(c *gin.Context) {
+		id_str := c.Param("id")
+		id, e := strconv.Atoi(id_str)
+		if e != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+			return
+		}
+
+		for _, note := range notes {
+			if note.ID == id {
+				c.JSON(http.StatusOK, note)
+				return
+			}
+		}
+
+		c.JSON(http.StatusNotFound, gin.H{"error": "Note not found"})
 	})
 
 	router.POST("/notes", func(c *gin.Context) {
