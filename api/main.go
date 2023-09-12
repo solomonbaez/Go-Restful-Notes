@@ -3,9 +3,10 @@ package main
 import (
 	"database/sql"
 	// "fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 	// "github.com/go-sql-driver/mysql"
 )
 
@@ -18,8 +19,9 @@ const (
 )
 
 type Note struct {
-	ID   int    `json:"id"`
-	Text string `json:"note"`
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+	Text  string `json:"content"`
 }
 
 var db *sql.DB
