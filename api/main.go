@@ -1,9 +1,20 @@
 package main
 
 import (
+	"database/sql"
+	// "fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+	// "github.com/go-sql-driver/mysql"
+)
+
+const (
+	DBUSER     = "mysql"
+	DBPASSWORD = "mysql"
+	DBHOST     = "localhost"
+	DBPORT     = "3306"
+	DBNAME     = "notes_api"
 )
 
 type Note struct {
@@ -11,8 +22,7 @@ type Note struct {
 	Text string `json:"note"`
 }
 
-var notes []Note
-var id_counter = 0
+var db *sql.DB
 
 func main() {
 	router := gin.Default()
