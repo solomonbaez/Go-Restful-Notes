@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
 )
@@ -37,17 +38,28 @@ const (
 )
 
 var db *sql.DB
+
 var limiter = time.Tick(DBLIMIT * time.Second)
 
-func main() {
-	cfg := mysql.Config{
-		User:   DBUSER,
-		Passwd: DBPASSWORD,
-		Net:    DBNET,
-		Addr:   DBHOST,
-		DBName: DBNAME,
-	}
+var cfg = mysql.Config{
+	User:   DBUSER,
+	Passwd: DBPASSWORD,
+	Net:    DBNET,
+	Addr:   DBHOST,
+	DBName: DBNAME,
+}
 
+var cors_cfg = cors.Config{
+	AllowAllOrigins:  true,
+	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+	AllowHeaders:     []string{"Origin"},
+	ExposeHeaders:    []string{"Content-Length"},
+	AllowCredentials: true,
+	MaxAge:           1 * time.Hour,
+}
+
+func main() {
+	// database
 	var e error
 	db, e = sql.Open("mysql", cfg.FormatDSN())
 	if e != nil {
@@ -63,7 +75,9 @@ func main() {
 	fmt.Println("Database Connection: Success!")
 	defer db.Close()
 
+	// router
 	router := gin.Default()
+	router.Use(cors.New(cors_cfg))
 
 	router.POST("/notes", postNote)
 	router.GET("/notes", getNotes)
