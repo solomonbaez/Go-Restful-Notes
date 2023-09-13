@@ -54,10 +54,11 @@ func main() {
 
 	router := gin.Default()
 
-	router.GET("/notes", getNotes)
-	router.GET("/notes/:id", getNoteByID)
-
 	router.POST("/notes", postNote)
+	router.GET("/notes", getNotes)
+
+	router.PUT("/notes/:id", updateNote)
+	router.GET("/notes/:id", getNoteByID)
 
 	router.Run(":8000")
 }
@@ -116,4 +117,33 @@ func postNote(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, note)
+}
+
+func updateNote(c *gin.Context) {
+	id := c.Param("id")
+
+	var existing_note Note
+	e := db.QueryRow("SELECT * FROM notes WHERE id = ?", id).Scan(&existing_note.ID, &existing_note.Title, &existing_note.Content)
+	if e != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Note not found"})
+		return
+	}
+
+	var updated_note Note
+	e = c.ShouldBindJSON(&updated_note)
+	if e != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to bind data"})
+		return
+	}
+
+	_, e = db.Exec(
+		"UPDATE notes SET title = ?, content = ? WHERE id = ?",
+		updated_note.Title, updated_note.Content, id,
+	)
+	if e != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update note"})
+		return
+	}
+
+	c.JSON(http.StatusOK, updated_note)
 }
