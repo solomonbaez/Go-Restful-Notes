@@ -57,6 +57,8 @@ func main() {
 	router.GET("/notes", getNotes)
 	router.GET("/notes/:id", getNoteByID)
 
+	router.POST("/notes", postNote)
+
 	router.Run(":8000")
 }
 
@@ -73,7 +75,7 @@ func getNotes(c *gin.Context) {
 	for rows.Next() {
 		var note Note
 		if e := rows.Scan(&note.ID, &note.Title, &note.Content); e != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan notes"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": e.Error()})
 			return
 		}
 		notes = append(notes, note)
@@ -88,12 +90,30 @@ func getNoteByID(c *gin.Context) {
 
 	// populate note item if query is successful
 	e := db.QueryRow(
-		"SELECT id, title, content FROM notes WHERE id = ?", id,
+		"SELECT * FROM notes WHERE id = ?", id,
 	).Scan(&note.ID, &note.Title, &note.Content)
 	if e != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to fetch note"})
+		c.JSON(http.StatusNotFound, gin.H{"error": e.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, note)
+}
+
+func postNote(c *gin.Context) {
+	var note Note
+	if e := c.ShouldBindJSON(&note); e != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": e.Error()})
+		return
+	}
+
+	_, e := db.Exec(
+		"INSERT INTO notes (title, content) VALUES (?, ?)",
+		note.Title, note.Content,
+	)
+	if e != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": e.Error()})
+	}
+
+	c.JSON(http.StatusCreated, note)
 }
