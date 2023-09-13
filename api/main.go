@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
@@ -21,6 +22,7 @@ const (
 	DBHOST     = "127.0.0.1:3306"
 	DBPORT     = "3306"
 	DBNAME     = "notes_api"
+	DBLIMIT    = 1 // rate limit - default: 1 request / second
 )
 
 type Note struct {
@@ -35,6 +37,7 @@ const (
 )
 
 var db *sql.DB
+var limiter = time.Tick(DBLIMIT * time.Second)
 
 func main() {
 	cfg := mysql.Config{
@@ -116,6 +119,14 @@ func getNote(c *gin.Context) {
 }
 
 func postNote(c *gin.Context) {
+	select {
+	case <-limiter:
+	default:
+		c.Header("Retry-After", strconv.Itoa(DBLIMIT)) // automatic retry
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Rate limit exceeded"})
+		return
+	}
+
 	var note Note
 	if e := c.ShouldBindJSON(&note); e != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": e.Error()})
@@ -140,6 +151,14 @@ func postNote(c *gin.Context) {
 }
 
 func updateNote(c *gin.Context) {
+	select {
+	case <-limiter:
+	default:
+		c.Header("Retry-After", strconv.Itoa(DBLIMIT))
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Rate limit exceeded"})
+		return
+	}
+
 	id := c.Param("id")
 
 	var existing_note Note
