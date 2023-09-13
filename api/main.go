@@ -10,6 +10,7 @@ import (
 	// "github.com/go-sql-driver/mysql"
 )
 
+// db -> notes_api
 const (
 	DBUSER     = "mysql"
 	DBPASSWORD = "mysql"
