@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -27,6 +28,11 @@ type Note struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
 }
+
+const (
+	MaxTitleLength   = 100
+	MaxContentLength = 1000
+)
 
 var db *sql.DB
 
@@ -98,7 +104,7 @@ func getNote(c *gin.Context) {
 	var note Note
 
 	// populate note item if query is successful
-	e = db.QueryRow(
+	e := db.QueryRow(
 		"SELECT * FROM notes WHERE id = ?", id,
 	).Scan(&note.ID, &note.Title, &note.Content)
 	if e != nil {
@@ -116,12 +122,18 @@ func postNote(c *gin.Context) {
 		return
 	}
 
+	if e := validateInputs(note.Title, note.Content); e != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": e.Error()})
+		return
+	}
+
 	_, e := db.Exec(
 		"INSERT INTO notes (title, content) VALUES (?, ?)",
 		note.Title, note.Content,
 	)
 	if e != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": e.Error()})
+		return
 	}
 
 	c.JSON(http.StatusCreated, note)
@@ -142,6 +154,10 @@ func updateNote(c *gin.Context) {
 	if e != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to bind data"})
 		return
+	}
+
+	if e := validateInputs(updated_note.Title, updated_note.Content); e != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": e.Error()})
 	}
 
 	_, e = db.Exec(
@@ -174,4 +190,18 @@ func deleteNote(c *gin.Context) {
 
 	response := fmt.Sprintf("Note %v deleted", id)
 	c.JSON(http.StatusOK, gin.H{"message": response})
+}
+
+func validateInputs(title string, content string) error {
+	if len(title) > MaxTitleLength {
+		return errors.New(
+			fmt.Sprintf("Title exceeds maximum length of: %v characters", MaxTitleLength),
+		)
+	} else if len(content) > MaxContentLength {
+		return errors.New(
+			fmt.Sprintf("Content exceeds maximum length of: %v characters", MaxTitleLength),
+		)
+	}
+
+	return nil
 }
