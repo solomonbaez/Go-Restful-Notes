@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -89,10 +90,15 @@ func getNotes(c *gin.Context) {
 
 func getNote(c *gin.Context) {
 	id := c.Param("id")
+	if _, e := strconv.Atoi(id); e != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
+
 	var note Note
 
 	// populate note item if query is successful
-	e := db.QueryRow(
+	e = db.QueryRow(
 		"SELECT * FROM notes WHERE id = ?", id,
 	).Scan(&note.ID, &note.Title, &note.Content)
 	if e != nil {
