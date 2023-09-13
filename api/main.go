@@ -58,7 +58,8 @@ func main() {
 	router.GET("/notes", getNotes)
 
 	router.PUT("/notes/:id", updateNote)
-	router.GET("/notes/:id", getNoteByID)
+	router.GET("/notes/:id", getNote)
+	router.DELETE("/notes/:id", deleteNote)
 
 	router.Run(":8000")
 }
@@ -85,7 +86,7 @@ func getNotes(c *gin.Context) {
 	c.JSON(http.StatusOK, notes)
 }
 
-func getNoteByID(c *gin.Context) {
+func getNote(c *gin.Context) {
 	id := c.Param("id")
 	var note Note
 
@@ -146,4 +147,20 @@ func updateNote(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, updated_note)
+}
+
+func deleteNote(c *gin.Context) {
+	id := c.Param("id")
+
+	_, e := db.Exec(
+		"DELETE FROM notes WHERE id = ?",
+		id,
+	)
+	if e != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to delete note"})
+		return
+	}
+
+	response := fmt.Sprintf("Note %v deleted", id)
+	c.JSON(http.StatusOK, gin.H{"message": response})
 }
