@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
@@ -157,7 +158,11 @@ func deleteNote(c *gin.Context) {
 		id,
 	)
 	if e != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to delete note"})
+		if strings.Contains(e.Error(), "no rows in result set") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Note not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete note"})
+		}
 		return
 	}
 
