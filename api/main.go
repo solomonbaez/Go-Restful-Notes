@@ -70,16 +70,7 @@ func main() {
 	defer db.Close()
 
 	// router
-	router := gin.Default()
-	router.Use(cors.New(cors_cfg))
-
-	router.POST("/notes", postNote)
-	router.GET("/notes", getNotes)
-
-	router.PUT("/notes/:id", updateNote)
-	router.GET("/notes/:id", getNote)
-	router.DELETE("/notes/:id", deleteNote)
-
+	router := initializeRouter()
 	router.Run(":8000")
 }
 
@@ -96,6 +87,19 @@ func initializeDatabase() (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func initializeRouter() *gin.Engine {
+	router := gin.Default()
+	router.Use(cors.New(cors_cfg))
+
+	router.POST("/notes", postNote)
+	router.GET("/notes", getNotes)
+	router.PUT("/notes/:id", updateNote)
+	router.GET("/notes/:id", getNote)
+	router.DELETE("/notes/:id", deleteNote)
+
+	return router
 }
 
 func getNotes(c *gin.Context) {
