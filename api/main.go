@@ -3,43 +3,15 @@ package main
 import (
 	"database/sql"
 	"log"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/go-sql-driver/mysql"
 	"github.com/solomonbaez/SB-Go-NAPI/api/routes"
-)
 
-// db -> notes_api
-const (
-	DBUSER     = "mysql"
-	DBPASSWORD = "mysql"
-	DBNET      = "tcp"
-	DBHOST     = "127.0.0.1:3306"
-	DBPORT     = "3306"
-	DBNAME     = "notes_api"
-	DBLIMIT    = 1 // rate limit - default: 1 request / second
+	cfg "github.com/solomonbaez/SB-Go-NAPI/api/config"
 )
 
 var db *sql.DB
-
-var cfg = mysql.Config{
-	User:   DBUSER,
-	Passwd: DBPASSWORD,
-	Net:    DBNET,
-	Addr:   DBHOST,
-	DBName: DBNAME,
-}
-
-var cors_cfg = cors.Config{
-	AllowAllOrigins:  true,
-	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-	AllowHeaders:     []string{"Origin"},
-	ExposeHeaders:    []string{"Content-Length"},
-	AllowCredentials: true,
-	MaxAge:           1 * time.Hour,
-}
 
 func main() {
 	// database
@@ -59,7 +31,7 @@ func main() {
 }
 
 func initializeDatabase() (*sql.DB, error) {
-	db, e := sql.Open("mysql", cfg.FormatDSN())
+	db, e := sql.Open("mysql", cfg.DB.FormatDSN())
 	if e != nil {
 		return nil, e
 	}
@@ -75,7 +47,7 @@ func initializeDatabase() (*sql.DB, error) {
 
 func initializeRouter(rh *routes.RouteHandler) *gin.Engine {
 	router := gin.Default()
-	router.Use(cors.New(cors_cfg))
+	router.Use(cors.New(cfg.CORS))
 
 	router.POST("/notes", rh.PostNote)
 	router.GET("/notes", rh.GetNotes)

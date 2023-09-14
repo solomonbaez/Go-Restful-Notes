@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	cfg "github.com/solomonbaez/SB-Go-NAPI/api/config"
 	"github.com/solomonbaez/SB-Go-NAPI/api/models"
 )
 
@@ -18,9 +18,6 @@ const (
 	MaxTitleLength   = 100
 	MaxContentLength = 1000
 )
-const DBLIMIT = 1
-
-var limiter = time.Tick(DBLIMIT * time.Second)
 
 // instance
 type RouteHandler struct {
@@ -79,9 +76,9 @@ func (rh *RouteHandler) GetNote(c *gin.Context) {
 
 func (rh *RouteHandler) PostNote(c *gin.Context) {
 	select {
-	case <-limiter:
+	case <-cfg.Limiter:
 	default:
-		c.Header("Retry-After", strconv.Itoa(DBLIMIT)) // automatic retry
+		c.Header("Retry-After", strconv.Itoa(cfg.RATELIMIT)) // automatic retry
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Rate limit exceeded"})
 		return
 	}
@@ -111,9 +108,9 @@ func (rh *RouteHandler) PostNote(c *gin.Context) {
 
 func (rh *RouteHandler) UpdateNote(c *gin.Context) {
 	select {
-	case <-limiter:
+	case <-cfg.Limiter:
 	default:
-		c.Header("Retry-After", strconv.Itoa(DBLIMIT))
+		c.Header("Retry-After", strconv.Itoa(cfg.RATELIMIT))
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Rate limit exceeded"})
 		return
 	}
