@@ -61,18 +61,12 @@ var cors_cfg = cors.Config{
 func main() {
 	// database
 	var e error
-	db, e = sql.Open("mysql", cfg.FormatDSN())
+	db, e = initializeDatabase()
 	if e != nil {
 		log.Fatal(e)
 	}
 
-	var p error
-	p = db.Ping()
-	if p != nil {
-		log.Fatal(p)
-	}
-
-	fmt.Println("Database Connection: Success!")
+	log.Println("Database Connection: Success!")
 	defer db.Close()
 
 	// router
@@ -87,6 +81,21 @@ func main() {
 	router.DELETE("/notes/:id", deleteNote)
 
 	router.Run(":8000")
+}
+
+func initializeDatabase() (*sql.DB, error) {
+	db, e := sql.Open("mysql", cfg.FormatDSN())
+	if e != nil {
+		return nil, e
+	}
+
+	p := db.Ping()
+	if p != nil {
+		db.Close()
+		return nil, p
+	}
+
+	return db, nil
 }
 
 func getNotes(c *gin.Context) {
