@@ -14,12 +14,6 @@ import (
 	"github.com/solomonbaez/SB-Go-NAPI/api/models"
 )
 
-// TODO: utilize cfg.yml structure to centralize globals
-const (
-	MaxTitleLength   = 100
-	MaxContentLength = 1000
-)
-
 // instance
 type RouteHandler struct {
 	DB *sql.DB
@@ -244,13 +238,13 @@ func (rh *RouteHandler) DeleteNote(c *gin.Context) {
 
 // utility
 func validateInputs(title string, content string) error {
-	if len(title) > MaxTitleLength {
+	if len(title) > cfg.MaxTitleLength {
 		return errors.New(
-			fmt.Sprintf("Title exceeds maximum length of: %v characters", MaxTitleLength),
+			fmt.Sprintf("Title exceeds maximum length of: %v characters", cfg.MaxTitleLength),
 		)
-	} else if len(content) > MaxContentLength {
+	} else if len(content) > cfg.MaxContentLength {
 		return errors.New(
-			fmt.Sprintf("Content exceeds maximum length of: %v characters", MaxTitleLength),
+			fmt.Sprintf("Content exceeds maximum length of: %v characters", cfg.MaxTitleLength),
 		)
 	}
 

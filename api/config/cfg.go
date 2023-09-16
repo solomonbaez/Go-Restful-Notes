@@ -7,7 +7,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
-// EDIT THESE CONSTANTS
+// DATABASE configuration
 const (
 	DBUSER     = "mysql"
 	DBPASSWORD = "mysql"
@@ -15,23 +15,8 @@ const (
 	DBHOST     = "127.0.0.1:3306"
 	DBPORT     = "3306"
 	DBNAME     = "notes_api"
-
-	RATELIMIT = 1
 )
 
-// INCREASE RATELIMIT to DECREASE requests / second
-var Limiter = time.Tick(RATELIMIT * time.Second)
-
-var (
-	CORSORIGINS = []string{"http://localhost:3000"} // I'm using NEXT.js
-	CORSMETHODS = []string{"GET", "POST", "PUT", "DELETE"}
-	CORSHEADERS = []string{"Origin"}
-	CORSEXPOSED = []string{"Content-Length"}
-	CORSCRD     = true
-	CORSMAXAGE  = 1 * time.Hour
-)
-
-// DATABASE configuration
 var DB = mysql.Config{
 	User:   DBUSER,
 	Passwd: DBPASSWORD,
@@ -41,6 +26,15 @@ var DB = mysql.Config{
 }
 
 // CORS configuration
+var (
+	CORSORIGINS = []string{"http://localhost:3000"} // I'm using NEXT.js
+	CORSMETHODS = []string{"GET", "POST", "PUT", "DELETE"}
+	CORSHEADERS = []string{"Origin"}
+	CORSEXPOSED = []string{"Content-Length"}
+	CORSCRD     = true
+	CORSMAXAGE  = 1 * time.Hour
+)
+
 var CORS = cors.Config{
 	AllowOrigins:     CORSORIGINS,
 	AllowMethods:     CORSMETHODS,
@@ -49,3 +43,13 @@ var CORS = cors.Config{
 	AllowCredentials: true,
 	MaxAge:           1 * time.Hour,
 }
+
+// INPUT VALIDATION constants
+const (
+	MaxTitleLength   = 100
+	MaxContentLength = 1000
+	RATELIMIT        = 1
+)
+
+// increase RATELIMIT to decrease requests/second
+var Limiter = time.Tick(RATELIMIT * time.Second)
