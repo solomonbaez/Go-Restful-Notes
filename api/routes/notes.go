@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	cfg "github.com/solomonbaez/SB-Go-NAPI/api/config"
 	"github.com/solomonbaez/SB-Go-NAPI/api/models"
 )
@@ -34,7 +35,12 @@ func NewRouteHandler(db *sql.DB) *RouteHandler {
 func (rh *RouteHandler) GetNotes(c *gin.Context) {
 	rows, e := rh.DB.Query("SELECT * FROM notes")
 	if e != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notes"})
+		response := "Failed to fetch notes"
+		log.Error().
+			Str("Error", e.Error()).
+			Msg(response)
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": response})
 		return
 	}
 
@@ -44,7 +50,12 @@ func (rh *RouteHandler) GetNotes(c *gin.Context) {
 	for rows.Next() {
 		var note models.Note
 		if e := rows.Scan(&note.ID, &note.Title, &note.Content); e != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": e.Error()})
+			response := fmt.Sprintf("Failed to fetch note (ID: %v)", note.ID)
+			log.Error().
+				Str("Error", e.Error()).
+				Msg(response)
+
+			c.JSON(http.StatusInternalServerError, gin.H{"error": response})
 			return
 		}
 		notes = append(notes, note)
@@ -56,7 +67,12 @@ func (rh *RouteHandler) GetNotes(c *gin.Context) {
 func (rh *RouteHandler) GetNote(c *gin.Context) {
 	id := c.Param("id")
 	if _, e := strconv.Atoi(id); e != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		response := fmt.Sprintf("Invalid ID format (ID: %v)", id)
+		log.Error().
+			Str("Error", e.Error()).
+			Msg(response)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": response})
 		return
 	}
 
@@ -67,7 +83,12 @@ func (rh *RouteHandler) GetNote(c *gin.Context) {
 		"SELECT * FROM notes WHERE id = ?", id,
 	).Scan(&note.ID, &note.Title, &note.Content)
 	if e != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": e.Error()})
+		response := fmt.Sprintf("Failed to fetch note (ID: %v)", id)
+		log.Error().
+			Str("Error", e.Error()).
+			Msg(response)
+
+		c.JSON(http.StatusNotFound, gin.H{"error": response})
 		return
 	}
 
@@ -85,13 +106,22 @@ func (rh *RouteHandler) PostNote(c *gin.Context) {
 
 	var note models.Note
 	if e := c.ShouldBindJSON(&note); e != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": e.Error()})
+		response := "Failed to parse JSON"
+		log.Error().
+			Str("Error", e.Error()).
+			Msg(response)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": response})
 		return
 	}
 
 	if e := validateInputs(note.Title, note.Content); e != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": e.Error()})
-		return
+		response := "Failed to validate data"
+		log.Error().
+			Str("Error", e.Error()).
+			Msg(response)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": response})
 	}
 
 	_, e := rh.DB.Exec(
@@ -99,10 +129,17 @@ func (rh *RouteHandler) PostNote(c *gin.Context) {
 		note.Title, note.Content,
 	)
 	if e != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": e.Error()})
+		response := "Failed to insert data"
+		log.Error().
+			Str("Error", e.Error()).
+			Msg(response)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": response})
 		return
 	}
 
+	log.Info().
+		Msg("Note created")
 	c.JSON(http.StatusCreated, note)
 }
 
@@ -120,19 +157,34 @@ func (rh *RouteHandler) UpdateNote(c *gin.Context) {
 	var existing_note models.Note
 	e := rh.DB.QueryRow("SELECT * FROM notes WHERE id = ?", id).Scan(&existing_note.ID, &existing_note.Title, &existing_note.Content)
 	if e != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Note not found"})
+		response := fmt.Sprintf("Failed to fetch note (ID: %v)", id)
+		log.Error().
+			Str("Error", e.Error()).
+			Msg(response)
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": response})
 		return
 	}
 
 	var updated_note models.Note
 	e = c.ShouldBindJSON(&updated_note)
 	if e != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to bind data"})
+		response := fmt.Sprintf("Failed to bind data (ID: %v)", id)
+		log.Error().
+			Str("Error", e.Error()).
+			Msg(response)
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": response})
 		return
 	}
 
 	if e := validateInputs(updated_note.Title, updated_note.Content); e != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": e.Error()})
+		response := "Failed to validate data"
+		log.Error().
+			Str("Error", e.Error()).
+			Msg(response)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": response})
 	}
 
 	_, e = rh.DB.Exec(
@@ -140,9 +192,18 @@ func (rh *RouteHandler) UpdateNote(c *gin.Context) {
 		updated_note.Title, updated_note.Content, id,
 	)
 	if e != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update note"})
+		response := "Failed to insert data"
+		log.Error().
+			Str("Error", e.Error()).
+			Msg(response)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": response})
 		return
 	}
+
+	log.Info().
+		Str("ID", id).
+		Msg("Note updated")
 
 	c.JSON(http.StatusOK, updated_note)
 }
@@ -156,14 +217,28 @@ func (rh *RouteHandler) DeleteNote(c *gin.Context) {
 	)
 	if e != nil {
 		if strings.Contains(e.Error(), "no rows in result set") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Note not found"})
+			response := fmt.Sprintf("Note not found (ID: %v)", id)
+			log.Error().
+				Str("Error", e.Error()).
+				Msg(response)
+
+			c.JSON(http.StatusBadRequest, gin.H{"error": response})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete note"})
+			response := fmt.Sprintf("Failed to delete note (ID: %v)", id)
+			log.Error().
+				Str("Error", e.Error()).
+				Msg(response)
+
+			c.JSON(http.StatusBadRequest, gin.H{"error": response})
 		}
 		return
 	}
 
 	response := fmt.Sprintf("Note %v deleted", id)
+	log.Info().
+		Str("ID", id).
+		Msg(response)
+
 	c.JSON(http.StatusOK, gin.H{"message": response})
 }
 
