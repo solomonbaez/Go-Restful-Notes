@@ -115,7 +115,7 @@ Here are some example requests using `curl` to interact with the API:
   curl -X DELETE http://localhost:8000/notes/1
   ```
 ## TODO
-- Create test suite (tests/fuzz)
+- Create test suite (tests/fuzz).
 
 ## Contributing
 
